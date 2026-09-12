@@ -69,8 +69,8 @@ On each deployment to `main`, GitHub Actions will:
 3. Run `npm run typecheck`
 4. Run `npm run build`
 5. Authenticate to Google Cloud
-6. Deploy the application source to Cloud Run
-7. Apply the configured runtime environment variables on the deployed service
+6. Validate the required Secret Manager secrets
+7. Deploy the application source to Cloud Run
 
 ### Required GitHub secrets
 
@@ -82,8 +82,6 @@ Configure these repository secrets before the workflow can deploy successfully:
 | `GCP_REGION` | Yes | Cloud Run region, for example `us-central1` |
 | `CLOUD_RUN_SERVICE` | Yes | Existing or new Cloud Run service name |
 | `GCP_SA_KEY` | Yes | Service account JSON with permission to deploy to Cloud Run and use Cloud Build |
-| `APP_URL` | Yes | Public application URL, usually the Cloud Run service URL or mapped custom domain |
-| `PAYSTACK_PUBLIC_KEY` | Yes | Client-side Paystack public key injected during deploy |
 
 ### Required Google Secret Manager secrets
 
@@ -115,12 +113,10 @@ Typical roles are:
 The deployment workflow sets these runtime values on Cloud Run:
 
 - `NODE_ENV=production`
-- `APP_URL`
 - `GEMINI_API_KEY` (from Secret Manager)
 - `PAYSTACK_SECRET_KEY` (from Secret Manager)
-- `PAYSTACK_PUBLIC_KEY`
 
-Local development can still use `.env.example` as the template for `.env.local`.
+Local development can still use `.env.example` as the template for `.env.local`. The file also includes `APP_URL` and `PAYSTACK_PUBLIC_KEY` for non-Cloud-Run environments, but the current production deployment flow does not require them because the server does not read them at runtime.
 
 ### Notes and limitations
 

@@ -39,11 +39,9 @@ jobs:
       - name: Validate deployment configuration
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-          APP_URL: ${{ secrets.APP_URL }}
-          PAYSTACK_PUBLIC_KEY: ${{ secrets.PAYSTACK_PUBLIC_KEY }}
         run: |
           missing=0
-          for name in GCP_PROJECT_ID GCP_REGION CLOUD_RUN_SERVICE GCP_SA_KEY APP_URL PAYSTACK_PUBLIC_KEY; do
+          for name in GCP_PROJECT_ID GCP_REGION CLOUD_RUN_SERVICE GCP_SA_KEY; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing required GitHub secret: $name"
               missing=1
@@ -85,8 +83,6 @@ jobs:
           source: .
           env_vars: |
             NODE_ENV=production
-            APP_URL=${{ secrets.APP_URL }}
-            PAYSTACK_PUBLIC_KEY=${{ secrets.PAYSTACK_PUBLIC_KEY }}
           secrets: |
             GEMINI_API_KEY=GEMINI_API_KEY:latest
             PAYSTACK_SECRET_KEY=PAYSTACK_SECRET_KEY:latest
