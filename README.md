@@ -49,105 +49,81 @@ npm run dev
 
 ## Deployment
 
-### Deploying from GitHub
+### Production deployment flow
 
-We support multiple deployment options:
+This repository now deploys from GitHub Actions to **Google Cloud Run**.
 
-#### Option 1: GitHub Pages
-1. Go to **Settings** → **Pages**
-2. Select the branch to deploy from (typically `main`)
-3. Choose the deployment folder (usually `/root` or `/docs`)
-4. Save and your site will be published automatically
+- **Workflow:** `.github/workflows/deploy.yml`
+- **Trigger:** every push or merge to `main`
+- **Manual trigger:** **Actions** → **Deploy to Cloud Run** → **Run workflow**
+- **Hosting target:** Google Cloud Run
 
-#### Option 2: GitHub Actions
-Automated deployment workflows can be set up in `.github/workflows/` to:
-- Build the project on push
-- Run tests
-- Deploy to your hosting provider
-- Update live environment
+Cloud Run is used because this project is not a static-only site: the production app serves the Vite build and also exposes Express API routes such as `/api/paystack/*`, `/api/gemini/*`, and `/api/stakeholders`.
 
-Create a workflow file `.github/workflows/deploy.yml`:
-```yaml
-name: Deploy
+### What the workflow does
 
-on:
-  push:
-    branches: [main]
+On each deployment to `main`, GitHub Actions will:
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - run: npm install
-      - run: npm run build
-      # Add your deployment steps here
-```
+1. Check out the repository
+2. Install dependencies with `npm ci`
+3. Run `npm run typecheck`
+4. Run `npm run build`
+5. Authenticate to Google Cloud
+6. Validate the required Secret Manager secrets
+7. Deploy the application source to Cloud Run using the repository `Dockerfile`
 
-#### Option 3: Cloudflare Pages
+### Required GitHub secrets
 
-Cloudflare Pages provides a fast, secure, and scalable platform for hosting your website directly from GitHub.
+Configure these repository secrets before the workflow can deploy successfully:
 
-##### Setup Instructions:
+| Secret | Required | Purpose |
+| --- | --- | --- |
+| `GCP_PROJECT_ID` | Yes | Google Cloud project ID |
+| `GCP_REGION` | Yes | Cloud Run region, for example `us-central1` |
+| `CLOUD_RUN_SERVICE` | Yes | Existing or new Cloud Run service name |
+| `GCP_SA_KEY` | Yes | Service account JSON with permission to deploy to Cloud Run and use Cloud Build |
 
-1. **Create a Cloudflare Account**
-   - Sign up at [cloudflare.com](https://www.cloudflare.com)
-   - Add your domain to Cloudflare (or use a Cloudflare subdomain)
+### Required Google Secret Manager secrets
 
-2. **Connect to GitHub**
-   - In Cloudflare Dashboard, go to **Pages**
-   - Click **Create a project** → **Connect to Git**
-   - Authorize Cloudflare to access your GitHub repositories
-   - Select `amaechiu-del/Aviation-Safety-Summit-2026`
+Create these secrets in the same Google Cloud project that receives the deployment:
 
-3. **Configure Build Settings**
-   - **Framework preset:** Select your framework (e.g., React, Next.js, or None)
-   - **Build command:** `npm run build`
-   - **Build output directory:** `dist` or `out` (depending on your setup)
-   - **Environment variables:** Add any required environment variables
+| Secret name | Required | Purpose |
+| --- | --- | --- |
+| `GEMINI_API_KEY` | Yes | Server-side Gemini API access |
+| `PAYSTACK_SECRET_KEY` | Yes | Server-side Paystack access |
 
-4. **Deploy**
-   - Click **Save and Deploy**
-   - Cloudflare will automatically build and deploy your site
-   - Your site will be available at `yourproject.pages.dev`
+### Suggested Google Cloud IAM access
 
-##### Automatic Deployments:
-- Every push to `main` triggers automatic deployment
-- Pull requests get preview deployments
-- Easy rollback to previous versions
+The service account stored in `GCP_SA_KEY` should be able to:
 
-##### Cloudflare Features:
-- **Global CDN:** Lightning-fast content delivery worldwide
-- **Security:** Built-in DDoS protection and WAF
-- **Performance:** Automatic image optimization and caching
-- **Analytics:** Real-time traffic insights
-- **Custom Domain:** Connect your own domain
-- **Environment Management:** Production and preview environments
-- **Rollback:** Easy version rollback with one click
+- deploy Cloud Run services
+- run Cloud Build builds from source
+- write service configuration updates
+- access Secret Manager secret metadata and attach secrets to Cloud Run revisions
 
-##### Cloudflare Configuration File (Optional)
+Typical roles are:
 
-Create a `wrangler.toml` file for advanced configuration:
-```toml
-name = "aviation-safety-summit-2026"
-type = "javascript"
-account_id = "your-account-id"
-workers_dev = true
-route = ""
-zone_id = ""
+- `Cloud Run Admin`
+- `Cloud Build Editor`
+- `Service Account User`
+- `Secret Manager Secret Accessor`
 
-[env.production]
-route = "yourdomain.com/*"
-zone_id = "your-zone-id"
-```
+### Application environment
 
-#### Option 4: Third-Party Hosting
-- **Vercel:** Connect your GitHub repository and auto-deploy on commits
-- **Netlify:** Push directly from GitHub with branch previews
-- **AWS/Azure/Google Cloud:** Use GitHub Actions to deploy to your cloud provider
+The deployment workflow sets these runtime values on Cloud Run:
+
+- `NODE_ENV=production`
+- `GEMINI_API_KEY` (from Secret Manager)
+- `PAYSTACK_SECRET_KEY` (from Secret Manager)
+
+Local development can still use `.env.example` as the template for `.env.local`. The file also includes `APP_URL` and `PAYSTACK_PUBLIC_KEY` for non-Cloud-Run environments, but the current production deployment flow does not require them because the server does not read them at runtime.
+
+### Notes and limitations
+
+- The server now reads `PORT` from the environment, which is required by Cloud Run.
+- Configure public or private Cloud Run access in Google Cloud according to your environment requirements; the workflow does not override that setting.
+- Application data is stored in `data/db.json`. On Cloud Run, that filesystem is ephemeral, so data written at runtime will not persist across instance restarts or replacements. If permanent storage is required, move this data to a managed database or object store.
+- If you need a release outside of the normal `main` branch flow, use the manual workflow dispatch in the Actions tab.
 
 ### Building for Production
 
