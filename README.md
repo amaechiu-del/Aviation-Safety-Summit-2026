@@ -65,7 +65,7 @@ Cloud Run is used because this project is not a static-only site: the production
 On each deployment to `main`, GitHub Actions will:
 
 1. Check out the repository
-2. Install dependencies with `npm install`
+2. Install dependencies with `npm ci`
 3. Run `npm run lint`
 4. Run `npm run build`
 5. Authenticate to Google Cloud
@@ -83,9 +83,16 @@ Configure these repository secrets before the workflow can deploy successfully:
 | `CLOUD_RUN_SERVICE` | Yes | Existing or new Cloud Run service name |
 | `GCP_SA_KEY` | Yes | Service account JSON with permission to deploy to Cloud Run and use Cloud Build |
 | `APP_URL` | Yes | Public application URL, usually the Cloud Run service URL or mapped custom domain |
+| `PAYSTACK_PUBLIC_KEY` | Yes | Client-side Paystack public key injected during deploy |
+
+### Required Google Secret Manager secrets
+
+Create these secrets in the same Google Cloud project that receives the deployment:
+
+| Secret name | Required | Purpose |
+| --- | --- | --- |
 | `GEMINI_API_KEY` | Yes | Server-side Gemini API access |
 | `PAYSTACK_SECRET_KEY` | Yes | Server-side Paystack access |
-| `PAYSTACK_PUBLIC_KEY` | Yes | Client-side Paystack public key injected during deploy |
 
 ### Suggested Google Cloud IAM access
 
@@ -94,12 +101,14 @@ The service account stored in `GCP_SA_KEY` should be able to:
 - deploy Cloud Run services
 - run Cloud Build builds from source
 - write service configuration updates
+- access Secret Manager secret metadata and attach secrets to Cloud Run revisions
 
 Typical roles are:
 
 - `Cloud Run Admin`
 - `Cloud Build Editor`
 - `Service Account User`
+- `Secret Manager Secret Accessor`
 
 ### Application environment
 
@@ -107,7 +116,7 @@ The deployment workflow sets these runtime values on Cloud Run:
 
 - `NODE_ENV=production`
 - `APP_URL`
-- `GEMINI_API_KEY`
+- `GEMINI_API_KEY` (from Secret Manager)
 - `PAYSTACK_SECRET_KEY`
 - `PAYSTACK_PUBLIC_KEY`
 
