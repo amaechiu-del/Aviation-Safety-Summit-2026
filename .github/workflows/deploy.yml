@@ -38,12 +38,13 @@ jobs:
       - name: Validate deployment configuration
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          APP_URL: ${{ secrets.APP_URL }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PAYSTACK_SECRET_KEY: ${{ secrets.PAYSTACK_SECRET_KEY }}
           PAYSTACK_PUBLIC_KEY: ${{ secrets.PAYSTACK_PUBLIC_KEY }}
         run: |
           missing=0
-          for name in GCP_PROJECT_ID GCP_REGION CLOUD_RUN_SERVICE GCP_SA_KEY GEMINI_API_KEY PAYSTACK_SECRET_KEY PAYSTACK_PUBLIC_KEY; do
+          for name in GCP_PROJECT_ID GCP_REGION CLOUD_RUN_SERVICE GCP_SA_KEY APP_URL GEMINI_API_KEY PAYSTACK_SECRET_KEY PAYSTACK_PUBLIC_KEY; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing required GitHub secret: $name"
               missing=1
@@ -78,16 +79,9 @@ jobs:
           service: ${{ env.CLOUD_RUN_SERVICE }}
           region: ${{ env.GCP_REGION }}
           source: .
-          flags: --allow-unauthenticated
           env_vars: |
             NODE_ENV=production
+            APP_URL=${{ secrets.APP_URL }}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             PAYSTACK_SECRET_KEY=${{ secrets.PAYSTACK_SECRET_KEY }}
             PAYSTACK_PUBLIC_KEY=${{ secrets.PAYSTACK_PUBLIC_KEY }}
-
-      - name: Set deployed application URL
-        run: |
-          gcloud run services update "$CLOUD_RUN_SERVICE" \
-            --project "$GCP_PROJECT_ID" \
-            --region "$GCP_REGION" \
-            --update-env-vars "APP_URL=${{ steps.deploy.outputs.url }}"

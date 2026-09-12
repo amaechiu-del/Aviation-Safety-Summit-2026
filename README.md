@@ -70,7 +70,7 @@ On each deployment to `main`, GitHub Actions will:
 4. Run `npm run build`
 5. Authenticate to Google Cloud
 6. Deploy the application source to Cloud Run
-7. Update `APP_URL` to the deployed Cloud Run service URL
+7. Apply the configured runtime environment variables on the deployed service
 
 ### Required GitHub secrets
 
@@ -82,6 +82,7 @@ Configure these repository secrets before the workflow can deploy successfully:
 | `GCP_REGION` | Yes | Cloud Run region, for example `us-central1` |
 | `CLOUD_RUN_SERVICE` | Yes | Existing or new Cloud Run service name |
 | `GCP_SA_KEY` | Yes | Service account JSON with permission to deploy to Cloud Run and use Cloud Build |
+| `APP_URL` | Yes | Public application URL, usually the Cloud Run service URL or mapped custom domain |
 | `GEMINI_API_KEY` | Yes | Server-side Gemini API access |
 | `PAYSTACK_SECRET_KEY` | Yes | Server-side Paystack access |
 | `PAYSTACK_PUBLIC_KEY` | Yes | Client-side Paystack public key injected during deploy |
@@ -105,16 +106,17 @@ Typical roles are:
 The deployment workflow sets these runtime values on Cloud Run:
 
 - `NODE_ENV=production`
+- `APP_URL`
 - `GEMINI_API_KEY`
 - `PAYSTACK_SECRET_KEY`
 - `PAYSTACK_PUBLIC_KEY`
-- `APP_URL` (set automatically to the deployed Cloud Run URL)
 
 Local development can still use `.env.example` as the template for `.env.local`.
 
 ### Notes and limitations
 
 - The server now reads `PORT` from the environment, which is required by Cloud Run.
+- Configure public or private Cloud Run access in Google Cloud according to your environment requirements; the workflow does not override that setting.
 - Application data is stored in `data/db.json`. On Cloud Run, that filesystem is ephemeral, so data written at runtime will not persist across instance restarts or replacements. If permanent storage is required, move this data to a managed database or object store.
 - If you need a release outside of the normal `main` branch flow, use the manual workflow dispatch in the Actions tab.
 
