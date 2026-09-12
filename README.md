@@ -70,7 +70,7 @@ On each deployment to `main`, GitHub Actions will:
 4. Run `npm run build`
 5. Authenticate to Google Cloud
 6. Validate the required Secret Manager secrets
-7. Deploy the application source to Cloud Run
+7. Deploy the application source to Cloud Run using the repository `Dockerfile`
 
 ### Required GitHub secrets
 
