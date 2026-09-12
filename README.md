@@ -117,7 +117,7 @@ The deployment workflow sets these runtime values on Cloud Run:
 - `NODE_ENV=production`
 - `APP_URL`
 - `GEMINI_API_KEY` (from Secret Manager)
-- `PAYSTACK_SECRET_KEY`
+- `PAYSTACK_SECRET_KEY` (from Secret Manager)
 - `PAYSTACK_PUBLIC_KEY`
 
 Local development can still use `.env.example` as the template for `.env.local`.
