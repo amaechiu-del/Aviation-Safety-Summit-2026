@@ -66,7 +66,7 @@ On each deployment to `main`, GitHub Actions will:
 
 1. Check out the repository
 2. Install dependencies with `npm ci`
-3. Run `npm run lint`
+3. Run `npm run typecheck`
 4. Run `npm run build`
 5. Authenticate to Google Cloud
 6. Deploy the application source to Cloud Run
