@@ -16,7 +16,7 @@ import { INITIAL_STAKEHOLDERS, STAKEHOLDER_CATEGORIES } from './src/data/stakeho
 
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT ?? 3000);
 
 // Initialize Gemini SDK with lazy initialization
 let aiClient: GoogleGenAI | null = null;
