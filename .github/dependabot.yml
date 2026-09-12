@@ -1,0 +1,44 @@
+version: 2
+updates:
+  # Package dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 5
+    pull-request-branch-name:
+      separator: "/"
+    reviewers:
+      - "amaechiu-del"
+    assignees:
+      - "amaechiu-del"
+    labels:
+      - "dependencies"
+      - "auto-update"
+    allow:
+      - dependency-type: "all"
+    commit-message:
+      prefix: "ci(deps):"
+      prefix-development: "ci(deps-dev):"
+      include: "scope"
+    rebase-strategy: "auto"
+    versioning-strategy: "auto"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "amaechiu-del"
+    labels:
+      - "ci/cd"
+      - "auto-update"
+    commit-message:
+      prefix: "ci(actions):"
+      include: "scope"
